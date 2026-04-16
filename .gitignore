@@ -1,0 +1,29 @@
+# MATLAB
+*.asv
+*.m~
+*.autosave
+*.mex*
+octave-workspace
+
+# MATLAB build/code-generation output
+slprj/
+sccprj/
+codegen/
+*_grt_rtw/
+
+# Simulink cache
+*.slxc
+
+# MATLAB crash dumps
+matlab_crash_dump.*
+hs_err_pid*
+
+# MATLAB data (often large/regenerable — remove this line to track data)
+*.mat
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
