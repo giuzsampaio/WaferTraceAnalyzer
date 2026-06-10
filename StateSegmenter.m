@@ -11,7 +11,7 @@ classdef StateSegmenter < handle
     %   states = ss.states;  % struct array with name, tStart, tEnd, fingerprint, cluster
 
     properties
-        fe              SignalFeatureExtractor
+        fe                          % SignalFeatureExtractor
         transitionTimes double
         waferBounds     struct      % struct array with .tStart, .tEnd per wafer
         states          cell        % {wafer_idx} -> struct array of states
@@ -53,13 +53,16 @@ classdef StateSegmenter < handle
                     'detectedBy', {}, 'subPeriods', {});
 
                 for s = 1:(numel(boundaries) - 1)
+                    % Field order must match the segments template above
                     seg = struct();
+                    seg.name = '';
                     seg.tStart = boundaries(s);
                     seg.tEnd = boundaries(s+1);
+                    seg.fingerprint = [];
+                    seg.cluster = 0;
                     seg.confidence = 0;
                     seg.detectedBy = 'state_discovery';
                     seg.subPeriods = [];
-                    seg.cluster = 0;
 
                     duration = seg.tEnd - seg.tStart;
                     if duration < obj.config.minSegmentDuration
@@ -214,7 +217,7 @@ classdef StateSegmenter < handle
             uniqueClusters = unique(clusterLabels);
             clusterMap = containers.Map('KeyType', 'int32', 'ValueType', 'int32');
             for i = 1:numel(uniqueClusters)
-                clusterMap(uniqueClusters(i)) = int32(i);
+                clusterMap(int32(uniqueClusters(i))) = int32(i);
             end
 
             % Apply cluster labels back to states
@@ -222,7 +225,7 @@ classdef StateSegmenter < handle
                 ref = segmentRefs{i};
                 wIdx = ref(1);
                 sIdx = ref(2);
-                cLabel = clusterMap(clusterLabels(i));
+                cLabel = clusterMap(int32(clusterLabels(i)));
                 obj.states{wIdx}(sIdx).cluster = cLabel;
                 obj.states{wIdx}(sIdx).name = sprintf('state_%d', cLabel);
             end
@@ -230,7 +233,7 @@ classdef StateSegmenter < handle
             % Store cluster info
             obj.clusters = struct();
             for c = 1:numel(uniqueClusters)
-                cLabel = clusterMap(uniqueClusters(c));
+                cLabel = clusterMap(int32(uniqueClusters(c)));
                 members = find(clusterLabels == uniqueClusters(c));
                 centroid = mean(vectors(members, :), 1);
                 obj.clusters(cLabel).label = cLabel;

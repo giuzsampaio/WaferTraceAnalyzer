@@ -237,9 +237,11 @@ classdef SignalFeatureExtractor < handle
                         derivSmooth(i) = pf(1);
                     end
                 end
-                % Fill edges
-                derivSmooth(1:halfWin) = derivSmooth(halfWin+1);
-                derivSmooth(N-halfWin+1:end) = derivSmooth(N-halfWin);
+                % Fill edges (only when the signal is longer than the window)
+                if N > halfWin + 1
+                    derivSmooth(1:halfWin) = derivSmooth(halfWin+1);
+                    derivSmooth(N-halfWin+1:end) = derivSmooth(N-halfWin);
+                end
                 % Normalize to [-1, 1]
                 derivMax = max(abs(derivSmooth));
                 if derivMax == 0, derivMax = 1; end

@@ -20,8 +20,8 @@ classdef TraceExplorer < handle
     %   Q           — quit and save
 
     properties
-        analyzer        WaferTraceAnalyzer
-        stateLibrary    StateLibrary
+        analyzer                    % WaferTraceAnalyzer
+        stateLibrary                % StateLibrary
         currentWafer    double = 1
         fig             matlab.ui.Figure
         axes            cell        % cell array of axes handles
@@ -404,7 +404,7 @@ classdef TraceExplorer < handle
 
             % Re-label remaining wafers
             for w = (fromWafer+1):obj.analyzer.numWafers
-                obj.stateLibrary.labelStates(obj.analyzer.periods(w));
+                obj.analyzer.periods(w) = obj.stateLibrary.labelStates(obj.analyzer.periods(w));
             end
         end
 

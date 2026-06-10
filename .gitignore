@@ -21,6 +21,10 @@ hs_err_pid*
 # MATLAB data (often large/regenerable — remove this line to track data)
 *.mat
 
+# WaferTraceAnalyzer generated output
+knowledge/
+*_analysis/
+
 # Editor / OS
 .DS_Store
 Thumbs.db

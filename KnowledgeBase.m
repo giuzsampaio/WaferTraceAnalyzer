@@ -20,7 +20,7 @@ classdef KnowledgeBase < handle
         periodNorms     struct              % Normal period durations/sequences
         overlayModels   struct              % Learned overlay correlation models
         worldModel      struct              % The system's "understanding of the world"
-        stateLibrary    StateLibrary        % Persistent state fingerprint store (v2)
+        stateLibrary                        % Persistent state fingerprint store (StateLibrary, v2)
     end
 
     methods

@@ -11,7 +11,7 @@ classdef OverlayCorrelator < handle
     %   oc.predictOverlayImpact(newTraceResults);
 
     properties
-        kb              KnowledgeBase
+        kb                              % KnowledgeBase
         models          struct          % Trained correlation models
         featureNames    cell            % Names of thermal features used
     end

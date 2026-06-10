@@ -99,9 +99,10 @@ classdef StateLibrary < handle
             obj.save();
         end
 
-        function labelStates(obj, states)
+        function states = labelStates(obj, states)
             % Match all states in a cell array of per-wafer state structs.
-            % Modifies states in-place (by reference through cell array).
+            % Cell arrays are value types in MATLAB, so the labeled copy is
+            % returned and the caller must reassign it.
 
             for w = 1:numel(states)
                 for s = 1:numel(states{w})
@@ -148,7 +149,7 @@ classdef StateLibrary < handle
 
                 % Partial match: check Jaccard similarity
                 intersection = numel(intersect(stateSequence, storedSeq));
-                union = numel(unique([stateSequence, storedSeq]));
+                union = numel(unique([stateSequence(:); storedSeq(:)]));
                 jaccard = intersection / max(union, 1);
                 if jaccard > conf
                     conf = jaccard;
