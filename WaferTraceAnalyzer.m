@@ -13,14 +13,14 @@ classdef WaferTraceAnalyzer < handle
         numWafers       double = 0
         periods         cell            % {wafer_idx} -> struct array of periods/states
         thermalResults  cell            % {wafer_idx} -> thermal analysis per period
-        kb              KnowledgeBase   % Handle to knowledge base
+        kb                              % Handle to knowledge base (KnowledgeBase)
         config          struct          % Signal classification config
         analysisID      char            % Unique ID for this analysis
 
         % State discovery engine components (v2)
-        featureExtractor    SignalFeatureExtractor
-        changePointDetector ChangePointDetector
-        stateSegmenter      StateSegmenter
+        featureExtractor                % SignalFeatureExtractor
+        changePointDetector             % ChangePointDetector
+        stateSegmenter                  % StateSegmenter
         useStateDiscovery   logical = true   % Use new engine (false = legacy mode)
     end
 
@@ -188,7 +188,7 @@ classdef WaferTraceAnalyzer < handle
             obj.periods = obj.stateSegmenter.states;
 
             if ~isempty(obj.kb) && ~isempty(obj.kb.stateLibrary)
-                obj.kb.stateLibrary.labelStates(obj.periods);
+                obj.periods = obj.kb.stateLibrary.labelStates(obj.periods);
             end
 
             % Step 5: Specialist refinement — if a state is labeled "expose",
@@ -485,7 +485,7 @@ classdef WaferTraceAnalyzer < handle
             timeLenMap = containers.Map('KeyType', 'int64', 'ValueType', 'int32');
             for i = 1:numel(timeVecs)
                 len = int64(numel(timeVecs(i).data));
-                timeLenMap(len) = i;
+                timeLenMap(len) = int32(i);
             end
 
             % Pair each data vector with matching-length time vector
@@ -763,10 +763,10 @@ classdef WaferTraceAnalyzer < handle
 
             % Cluster into wafer-length intervals
             intervals = struct('tStart', {}, 'tEnd', {}, 'idx', {});
-            if isempty(starts), return; end
+            if isempty(starts) || isempty(stops), return; end
 
             curStart = starts(1);
-            curStop = stops(min(1, numel(stops)));
+            curStop = stops(1);
             for si = 2:numel(starts)
                 if t(starts(si)) - t(curStop) > 10  % gap between wafers
                     w.tStart = t(curStart);
@@ -1206,8 +1206,8 @@ classdef WaferTraceAnalyzer < handle
                     dH_rs = detrend(dH_rs);
                     dT_rs = detrend(dT_rs);
 
-                    % Normalized cross-correlation
-                    [xc, lags] = xcorr(dT_rs, dH_rs, 'coeff');
+                    % Normalized cross-correlation (FFT-based, no toolbox needed)
+                    [xc, lags] = WaferTraceAnalyzer.normalizedXCorr(dT_rs, dH_rs);
                     dt = median(diff(tCommon));
                     lagTimes = lags * dt;
 
@@ -1462,12 +1462,12 @@ classdef WaferTraceAnalyzer < handle
                 pNameValid = matlab.lang.makeValidName(pName);
 
                 fig = figure('Position', [100 100 1200 800], 'Visible', 'off');
+                colors = parula(obj.numWafers);
 
                 % Temperature subplot
                 if ~isempty(tempSigs)
                     ax1 = subplot(2,1,1);
                     hold(ax1, 'on');
-                    colors = parula(obj.numWafers);
                     for w = 1:obj.numWafers
                         periods_w = obj.periods{w};
                         pIdx = find(strcmp({periods_w.name}, pName), 1);
@@ -1484,7 +1484,7 @@ classdef WaferTraceAnalyzer < handle
                     ylabel(ax1, 'Temperature');
                     grid(ax1, 'on');
                     colorbar(ax1); colormap(ax1, parula);
-                    caxis(ax1, [1 obj.numWafers]);
+                    caxis(ax1, [1 max(obj.numWafers, 2)]);
                     hold(ax1, 'off');
                 end
 
@@ -1512,7 +1512,7 @@ classdef WaferTraceAnalyzer < handle
                 end
 
                 sgtitle(sprintf('Thermal Behavior: %s', upper(pName)));
-                saveas(fig, fullfile(outputDir, sprintf('thermal_%s.png', pName)));
+                saveas(fig, fullfile(outputDir, sprintf('thermal_%s.png', pNameValid)));
                 close(fig);
             end
         end
@@ -1680,6 +1680,30 @@ classdef WaferTraceAnalyzer < handle
             end
 
             fclose(fid);
+        end
+    end
+
+    methods (Static, Access = private)
+        function [xc, lags] = normalizedXCorr(x, y)
+            % Equivalent to xcorr(x, y, 'coeff') for equal-length vectors,
+            % implemented with FFTs so the Signal Processing Toolbox is
+            % not required.
+            x = x(:);
+            y = y(:);
+            n = max(numel(x), numel(y));
+            if numel(x) < n, x(n) = 0; end
+            if numel(y) < n, y(n) = 0; end
+
+            nfft = 2^nextpow2(2*n - 1);
+            c = ifft(fft(x, nfft) .* conj(fft(y, nfft)), 'symmetric');
+            xc = [c(end-n+2:end); c(1:n)];   % reorder to lags -(n-1):(n-1)
+
+            denom = sqrt(sum(x.^2) * sum(y.^2));
+            if denom == 0
+                denom = eps;
+            end
+            xc = xc / denom;
+            lags = -(n-1):(n-1);
         end
     end
 end

@@ -10,7 +10,7 @@ classdef ChangePointDetector < handle
     %   transitions = cpd.transitionTimes;  % column vector of time points
 
     properties
-        fe              SignalFeatureExtractor   % Feature extractor (already run)
+        fe                          % Feature extractor (SignalFeatureExtractor, already run)
         config          struct
         changeScore     double      % [N x 1] combined change score
         transitionTimes double      % Detected transition time points
@@ -118,9 +118,9 @@ classdef ChangePointDetector < handle
 
             for i = (halfWin+1):(N-halfWin)
                 % Mean of features in window before
-                i1 = max(1, i - halfWin);
+                i1 = max(1, i - halfWin + 1);
                 i2 = i;
-                n1 = i2 - i1;
+                n1 = i2 - i1 + 1;
                 if n1 == 0, continue; end
                 meanBefore = (cumF(i2+1, :) - cumF(i1, :)) / n1;
 
